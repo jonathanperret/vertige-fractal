@@ -54,8 +54,8 @@ const phasedProgress = (
 
 function App(): JSX.Element {
   const [viewport, setViewport] = useState<MandelbrotViewport>({
-    center: [-0.75, 0],
-    zoom: 1,
+    center: [cameraViews[0][0], cameraViews[0][1]],
+    zoom: cameraViews[0][2],
     rotation: 0,
   });
   const [fps, setFps] = useState<string>('0.0');
