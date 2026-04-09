@@ -5,6 +5,7 @@ export type {
   MandelbrotPalette,
   MandelbrotPoint,
   MandelbrotViewport,
+  OverlaySpec,
 } from './MandelbrotCanvas';
 export {
   createMandelbrotFragmentShader,

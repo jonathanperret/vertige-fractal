@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   MandelbrotCanvas,
   MandelbrotPalette,
@@ -122,6 +122,15 @@ function App(): JSX.Element {
   });
   const [overlayCopyStatus, setOverlayCopyStatus] = useState<'idle' | 'copied'>('idle');
   const [editMode, setEditMode] = useState(false);
+
+  const overlayData = useMemo(
+    () =>
+      overlayPositions.map((pos, i) => ({
+        position: pos as [number, number, number],
+        imageUrl: `${process.env.PUBLIC_URL}/inserts/${overlayFilenames[i]}`,
+      })),
+    [overlayPositions],
+  );
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const overlayRefs = useRef<Array<HTMLDivElement | null>>([]);
@@ -429,7 +438,8 @@ function App(): JSX.Element {
         paletteSpeed={paletteSpeed}
         devicePixelRatio={dpr}
         onFpsChange={setFps}
-        onViewportRendered={updateOverlayPlacement}
+        onViewportRendered={editMode ? updateOverlayPlacement : undefined}
+        overlays={editMode ? undefined : overlayData}
         style={{ cursor: dragging ? 'grabbing' : 'grab', touchAction: 'none' }}
         onPointerDown={(event) => {
           if (event.button !== 0) {
@@ -508,8 +518,8 @@ function App(): JSX.Element {
           }));
         }}
       />
-      {overlayFilenames.map((filename, index) =>
-        editMode ? (
+      {editMode &&
+        overlayFilenames.map((filename, index) => (
           <div
             key={`overlay-${index}`}
             ref={(node) => {
@@ -555,27 +565,7 @@ function App(): JSX.Element {
               }}
             />
           </div>
-        ) : (
-          <img
-            key={`overlay-${index}`}
-            ref={(node) => {
-              overlayRefs.current[index] = node as unknown as HTMLDivElement;
-            }}
-            src={`${process.env.PUBLIC_URL}/inserts/${filename}`}
-            alt={`Overlay ${filename}`}
-            style={{
-              position: 'absolute',
-              left: 0,
-              top: 0,
-              transform: 'translateY(-50%)',
-              width: 0,
-              height: 'auto',
-              pointerEvents: 'none',
-              userSelect: 'none',
-            }}
-          />
-        ),
-      )}
+        ))}
       {editMode ? (
         <div
           style={{

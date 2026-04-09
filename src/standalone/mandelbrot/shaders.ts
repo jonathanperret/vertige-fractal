@@ -32,6 +32,37 @@ export const fullscreenVertexArray = {
   },
 };
 
+export const overlayVertexShader = `
+attribute vec2 a_position;
+uniform vec2 u_resolution;
+uniform vec4 u_rect;
+varying vec2 v_texCoord;
+
+void main() {
+  vec2 pixel = u_rect.xy + a_position * u_rect.zw;
+  vec2 ndc = (pixel / u_resolution) * 2.0 - 1.0;
+  gl_Position = vec4(ndc.x, -ndc.y, 0.0, 1.0);
+  v_texCoord = a_position;
+}
+`;
+
+export const overlayFragmentShader = `
+precision mediump float;
+uniform sampler2D u_texture;
+varying vec2 v_texCoord;
+
+void main() {
+  gl_FragColor = texture2D(u_texture, v_texCoord);
+}
+`;
+
+export const overlayQuadArray = {
+  a_position: {
+    data: [0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1],
+    numComponents: 2,
+  },
+};
+
 export function createMandelbrotFragmentShader({
   maxIterations = 300,
   antiAliasing = 1,

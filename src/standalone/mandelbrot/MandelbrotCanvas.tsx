@@ -12,6 +12,9 @@ import {
   createMandelbrotFragmentShader,
   fullscreenVertexArray,
   fullscreenVertexShader,
+  overlayFragmentShader,
+  overlayQuadArray,
+  overlayVertexShader,
 } from './shaders';
 
 export type MandelbrotPoint = [number, number];
@@ -22,6 +25,11 @@ export interface MandelbrotViewport {
   center: MandelbrotPoint;
   zoom: number;
   rotation?: number;
+}
+
+export interface OverlaySpec {
+  position: [number, number, number];
+  imageUrl: string;
 }
 
 export interface MandelbrotCanvasProps
@@ -39,6 +47,7 @@ export interface MandelbrotCanvasProps
     viewport: MandelbrotViewport,
     canvasSize: { width: number; height: number },
   ) => void;
+  overlays?: OverlaySpec[];
 }
 
 interface ResizeObserverLike {
@@ -78,6 +87,7 @@ const MandelbrotCanvas = React.forwardRef<HTMLCanvasElement, MandelbrotCanvasPro
       devicePixelRatio = window.devicePixelRatio || 1,
       onFpsChange,
       onViewportRendered,
+      overlays,
       style,
       ...canvasProps
     },
@@ -88,6 +98,11 @@ const MandelbrotCanvas = React.forwardRef<HTMLCanvasElement, MandelbrotCanvasPro
     const bufferInfoRef = useRef<twgl.BufferInfo | null>(null);
     const programInfoRef = useRef<twgl.ProgramInfo | null>(null);
     const resizeObserverRef = useRef<ResizeObserverLike | null>(null);
+    const overlayProgramRef = useRef<twgl.ProgramInfo | null>(null);
+    const overlayBufferRef = useRef<twgl.BufferInfo | null>(null);
+    const overlayTexturesRef = useRef<Map<string, { texture: WebGLTexture; aspectRatio: number } | null>>(new Map());
+    const overlaysRef = useRef(overlays);
+    const renderFrameRef = useRef<(timestamp?: number) => void>(() => { /* noop */ });
     const fpsThenRef = useRef(0);
     const fpsFramesRef = useRef(0);
     const fpsElapsedRef = useRef(0);
@@ -138,6 +153,52 @@ const MandelbrotCanvas = React.forwardRef<HTMLCanvasElement, MandelbrotCanvasPro
         });
         twgl.drawBufferInfo(gl, bufferInfo);
 
+        // Draw overlays via WebGL
+        const currentOverlays = overlaysRef.current;
+        const overlayProgram = overlayProgramRef.current;
+        const overlayBuffer = overlayBufferRef.current;
+
+        if (currentOverlays?.length && overlayProgram && overlayBuffer) {
+          gl.enable(gl.BLEND);
+          gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+          gl.useProgram(overlayProgram.program);
+          twgl.setBuffersAndAttributes(gl, overlayProgram, overlayBuffer);
+
+          const theta = viewport.rotation ?? 0;
+          const cosT = Math.cos(theta);
+          const sinT = Math.sin(theta);
+
+          for (const { position: [cx, cy, fillWindowZoom], imageUrl } of currentOverlays) {
+            const texInfo = overlayTexturesRef.current.get(imageUrl);
+            if (!texInfo || fillWindowZoom <= 0) continue;
+
+            const deltaX = (cx - viewport.center[0]) * viewport.zoom;
+            const deltaY = (cy - viewport.center[1]) * viewport.zoom;
+            const pX = deltaX * cosT + deltaY * sinT;
+            const pY = -deltaX * sinT + deltaY * cosT;
+
+            const overlayCenterX = (pX * canvas.height + canvas.width) / 2;
+            const overlayCenterY = (canvas.height - pY * canvas.height) / 2;
+            const overlayWidthPx = (viewport.zoom * canvas.height) / fillWindowZoom;
+            const overlayHeightPx = overlayWidthPx * texInfo.aspectRatio;
+
+            twgl.setUniforms(overlayProgram, {
+              u_resolution: [canvas.width, canvas.height],
+              u_rect: [
+                overlayCenterX - overlayWidthPx / 2,
+                overlayCenterY - overlayHeightPx / 2,
+                overlayWidthPx,
+                overlayHeightPx,
+              ],
+              u_texture: texInfo.texture,
+            });
+            twgl.drawBufferInfo(gl, overlayBuffer);
+          }
+
+          gl.disable(gl.BLEND);
+        }
+
         onViewportRendered?.(viewport, {
           width: canvas.clientWidth,
           height: canvas.clientHeight,
@@ -180,6 +241,12 @@ const MandelbrotCanvas = React.forwardRef<HTMLCanvasElement, MandelbrotCanvasPro
       }
 
       glRef.current = gl;
+
+      overlayProgramRef.current = twgl.createProgramInfo(gl, [
+        overlayVertexShader,
+        overlayFragmentShader,
+      ]);
+      overlayBufferRef.current = twgl.createBufferInfoFromArrays(gl, overlayQuadArray);
 
       const handleContextLost = (event: Event) => {
         event.preventDefault();
@@ -246,6 +313,44 @@ const MandelbrotCanvas = React.forwardRef<HTMLCanvasElement, MandelbrotCanvasPro
         resizeObserverRef.current = null;
       };
     }, [renderFrame]);
+
+    useEffect(() => {
+      overlaysRef.current = overlays;
+    }, [overlays]);
+
+    useEffect(() => {
+      renderFrameRef.current = renderFrame;
+    }, [renderFrame]);
+
+    useEffect(() => {
+      const gl = glRef.current;
+      if (!gl) return;
+
+      const currentOverlays = overlays ?? [];
+      currentOverlays.forEach(({ imageUrl }) => {
+        if (overlayTexturesRef.current.has(imageUrl)) return;
+
+        overlayTexturesRef.current.set(imageUrl, null);
+
+        const img = new Image();
+        img.onload = () => {
+          const currentGl = glRef.current;
+          if (!currentGl) return;
+          const texture = twgl.createTexture(currentGl, {
+            src: img,
+            min: currentGl.LINEAR,
+            mag: currentGl.LINEAR,
+            wrap: currentGl.CLAMP_TO_EDGE,
+          });
+          overlayTexturesRef.current.set(imageUrl, {
+            texture,
+            aspectRatio: img.naturalHeight / img.naturalWidth,
+          });
+          renderFrameRef.current();
+        };
+        img.src = imageUrl;
+      });
+    }, [overlays]);
 
     return (
       <canvas
