@@ -33,7 +33,7 @@ export interface OverlaySpec {
 }
 
 export interface MandelbrotCanvasProps
- extends Omit<CanvasHTMLAttributes<HTMLCanvasElement>, 'color'> {
+  extends Omit<CanvasHTMLAttributes<HTMLCanvasElement>, 'color'> {
   viewport: MandelbrotViewport;
   maxIterations?: number;
   antiAliasing?: number;
