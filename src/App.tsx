@@ -6,7 +6,44 @@ import {
 } from './standalone/mandelbrot';
 
 type OverlaySpec = [[number, number, number], string];
+/*
 
+const overlays: OverlaySpec[] = [
+  [[-1.4937222, 0.17819655, 8.61107], '12.png'],
+  [[-1.2405645, 0.23397534, 23.4137], '13.png'],
+  [[-1.3262510, 0.17163430, 19.7618], '14.png'],
+  [[-1.1769119, 0.20993960, 146.488], '1.png'],
+  [[-1.1946430, 0.22494905, 89.0857], '2.png'],
+  [[-1.1646283, 0.20896037, 235.973], '3.png'],
+  [[-1.1710526, 0.20083064, 600.000], '4.png'],
+  [[-1.2937647, 0.21940078, 50.9397], '5.png'],
+  [[-1.1739289, 0.20109071, 593.677], '6.png'],
+  [[-1.1675626, 0.20080358, 3115.27], '7.png'],
+  [[-1.1675779, 0.20015191, 33718.3], '8.png'],
+  [[-1.1674278, 0.20014556, 24091.3], '9.png'],
+  [[-1.1675217, 0.20018652, 27182.2], '10.png'],
+  [[-1.1665803, 0.20102253, 2779.82], '11.png'],
+  [[-1.1933927, 0.20618969, 90.6876], '15.png'],
+  [[-1.1665459, 0.20031059, 1899.39], '16.png'],
+  [[-1.1673148, 0.19993023, 8491.58], '17.png'],
+  [[-1.1680137, 0.19931438, 10675.0], '18.png'],
+  [[-1.1676485, 0.19931800, 8010.50], '19.png'],
+  [[-1.1678882, 0.19979915, 7556.40], '20.png'],
+];
+
+const cameraViews: Array<[number, number, number]> = [
+  [-1.2884501, 0.21523253, 5.79170],
+  [-1.2487993, 0.20859993, 17.9890],
+  [-1.1741412, 0.21180441, 61.7813],
+  [-1.1715733, 0.20003404, 379.561],
+  [-1.1670974, 0.20055126, 1666.67],
+  [-1.1674727, 0.20016897, 13567.2],
+  [-1.1673872, 0.19993365, 8532.59],
+  [-1.1679556, 0.19930395, 8937.45],
+  [-1.1676251, 0.19930540, 8937.45],
+  [-1.1678925, 0.19979762, 6835.37],
+];
+*/
 const defaultOverlaySpecs: OverlaySpec[] = [
   [[-1.2680107, 0.23614191, 29.7134], '12.png'],
   [[-1.2262774, 0.22066583, 40.8872], '13.png'],
@@ -491,7 +528,7 @@ function App(): JSX.Element {
         onWheel={(event) => {
           event.preventDefault();
           stopCameraAnimation();
-          const factor = event.deltaY > 0 ? 0.9 : 1.1;
+          const factor = event.deltaY > 0 ? 0.97 : 1.03;
           setViewport((current) => ({
             ...current,
             zoom: Math.max(0.1, current.zoom * factor),
@@ -566,56 +603,114 @@ function App(): JSX.Element {
           />
         ),
       )}
-      <div
-        style={{
-          position: 'absolute',
-          top: 12,
-          left: 12,
-          color: '#d8f1ff',
-          background: 'rgba(0, 0, 0, 0.45)',
-          border: '1px solid rgba(216, 241, 255, 0.3)',
-          borderRadius: 8,
-          padding: '6px 10px',
-          fontFamily: 'monospace',
-          fontSize: 12,
-          userSelect: 'none',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-        }}
-      >
-        <span>
-          x: {viewport.center[0].toFixed(6)} | y: {viewport.center[1].toFixed(6)} | zoom:{' '}
-          {viewport.zoom.toFixed(3)}
-        </span>
-        <button
-          type="button"
-          onClick={handleCopyCoordinates}
+      {editMode ? (
+        <div
           style={{
-            fontFamily: 'monospace',
-            fontSize: 11,
+            position: 'absolute',
+            top: 12,
+            left: 12,
             color: '#d8f1ff',
-            background: 'rgba(216, 241, 255, 0.12)',
-            border: '1px solid rgba(216, 241, 255, 0.35)',
-            borderRadius: 5,
-            padding: '2px 8px',
-            cursor: 'pointer',
+            background: 'rgba(0, 0, 0, 0.45)',
+            border: '1px solid rgba(216, 241, 255, 0.3)',
+            borderRadius: 8,
+            padding: '6px 10px',
+            fontFamily: 'monospace',
+            fontSize: 12,
+            userSelect: 'none',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
           }}
         >
-          Copy
-        </button>
-        {copyStatus === 'copied' ? <span>copied</span> : null}
-        {copyStatus === 'error' ? <span>copy failed</span> : null}
-        <span style={{ margin: '0 4px', opacity: 0.3 }}>|</span>
+          <span>
+            x: {viewport.center[0].toFixed(6)} | y: {viewport.center[1].toFixed(6)} |
+            zoom: {viewport.zoom.toFixed(3)}
+          </span>
+          <button
+            type="button"
+            onClick={handleCopyCoordinates}
+            style={{
+              fontFamily: 'monospace',
+              fontSize: 11,
+              color: '#d8f1ff',
+              background: 'rgba(216, 241, 255, 0.12)',
+              border: '1px solid rgba(216, 241, 255, 0.35)',
+              borderRadius: 5,
+              padding: '2px 8px',
+              cursor: 'pointer',
+            }}
+          >
+            Copy
+          </button>
+          {copyStatus === 'copied' ? <span>copied</span> : null}
+          {copyStatus === 'error' ? <span>copy failed</span> : null}
+          <span style={{ margin: '0 4px', opacity: 0.3 }}>|</span>
+          <label
+            style={{
+              fontFamily: 'monospace',
+              fontSize: 11,
+              color: '#d8f1ff',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={editMode}
+              onChange={(e) => setEditMode(e.target.checked)}
+            />
+            Edit
+          </label>
+          <button
+            type="button"
+            onClick={handleCopyOverlays}
+            style={{
+              fontFamily: 'monospace',
+              fontSize: 11,
+              color: '#d8f1ff',
+              background: 'rgba(216, 241, 255, 0.12)',
+              border: '1px solid rgba(216, 241, 255, 0.35)',
+              borderRadius: 5,
+              padding: '2px 8px',
+              cursor: 'pointer',
+            }}
+          >
+            Copy overlays
+          </button>
+          {overlayCopyStatus === 'copied' ? <span>copied</span> : null}
+          <button
+            type="button"
+            onClick={handleResetOverlays}
+            style={{
+              fontFamily: 'monospace',
+              fontSize: 11,
+              color: '#d8f1ff',
+              background: 'rgba(216, 241, 255, 0.12)',
+              border: '1px solid rgba(216, 241, 255, 0.35)',
+              borderRadius: 5,
+              padding: '2px 8px',
+              cursor: 'pointer',
+            }}
+          >
+            Reset overlays
+          </button>
+        </div>
+      ) : (
         <label
           style={{
+            position: 'absolute',
+            bottom: 12,
+            left: 12,
             fontFamily: 'monospace',
             fontSize: 11,
-            color: '#d8f1ff',
+            color: 'rgba(216, 241, 255, 0.4)',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
             gap: 4,
+            userSelect: 'none',
           }}
         >
           <input
@@ -623,46 +718,9 @@ function App(): JSX.Element {
             checked={editMode}
             onChange={(e) => setEditMode(e.target.checked)}
           />
-          Edit overlays
+          Edit
         </label>
-        {editMode && (
-          <>
-            <button
-              type="button"
-              onClick={handleCopyOverlays}
-              style={{
-                fontFamily: 'monospace',
-                fontSize: 11,
-                color: '#d8f1ff',
-                background: 'rgba(216, 241, 255, 0.12)',
-                border: '1px solid rgba(216, 241, 255, 0.35)',
-                borderRadius: 5,
-                padding: '2px 8px',
-                cursor: 'pointer',
-              }}
-            >
-              Copy overlays
-            </button>
-            {overlayCopyStatus === 'copied' ? <span>copied</span> : null}
-            <button
-              type="button"
-              onClick={handleResetOverlays}
-              style={{
-                fontFamily: 'monospace',
-                fontSize: 11,
-                color: '#d8f1ff',
-                background: 'rgba(216, 241, 255, 0.12)',
-                border: '1px solid rgba(216, 241, 255, 0.35)',
-                borderRadius: 5,
-                padding: '2px 8px',
-                cursor: 'pointer',
-              }}
-            >
-              Reset overlays
-            </button>
-          </>
-        )}
-      </div>
+      )}
       <div
         style={{
           position: 'absolute',
@@ -761,11 +819,7 @@ function App(): JSX.Element {
                   onClick={() => {
                     setViews((prev) => {
                       const next = [...prev];
-                      next[i] = [
-                        viewport.center[0],
-                        viewport.center[1],
-                        viewport.zoom,
-                      ];
+                      next[i] = [viewport.center[0], viewport.center[1], viewport.zoom];
                       return next;
                     });
                   }}
