@@ -147,6 +147,18 @@ function App(): JSX.Element {
     [stopCameraAnimation],
   );
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft') {
+        animateToView(viewIndex - 1);
+      } else if (e.key === 'ArrowRight') {
+        animateToView(viewIndex + 1);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [animateToView, viewIndex]);
+
   const updateOverlayPlacement = useCallback(
     (
       renderedViewport: MandelbrotViewport,
