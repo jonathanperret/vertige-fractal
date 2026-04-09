@@ -11,10 +11,10 @@
     "react": "^17.0.1",
     "react-colorful": "^4.4.3",
     "react-dom": "^17.0.1",
-    "react-scripts": "4.0.1",
+    "react-scripts": "^5.0.1",
     "react-spring": "^8.0.27",
     "twgl.js": "^4.17.0",
-    "typescript": "^4.1.2"
+    "typescript": "^4.9.5"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "4.9.0",
@@ -27,17 +27,16 @@
     "eslint-plugin-react-hooks": "^4.1.2",
     "gh-pages": "^5.0.0",
     "prettier": "^2.2.1",
-    "react-refresh": "0.8.3",
     "standard-version": "^9.0.0",
     "web-vitals": "^1.0.1"
   },
   "scripts": {
-    "start": "cross-env NODE_OPTIONS=--openssl-legacy-provider REACT_APP_GIT_SHA=$(git describe --tags) react-scripts start",
-    "start:https": "cross-env NODE_OPTIONS=--openssl-legacy-provider HTTPS=true REACT_APP_GIT_SHA=$(git describe --tags) react-scripts start",
-    "build": "cross-env NODE_OPTIONS=--openssl-legacy-provider REACT_APP_GIT_SHA=$(git describe --tags) react-scripts build",
+    "start": "cross-env REACT_APP_GIT_SHA=$(git describe --tags) react-scripts start",
+    "start:https": "cross-env HTTPS=true REACT_APP_GIT_SHA=$(git describe --tags) react-scripts start",
+    "build": "cross-env REACT_APP_GIT_SHA=$(git describe --tags) react-scripts build",
     "build:ci": "cross-env CI=true npm run build",
-    "build:localhost": "cross-env NODE_OPTIONS=--openssl-legacy-provider PUBLIC_URL='.' react-scripts build",
-    "test": "cross-env NODE_OPTIONS=--openssl-legacy-provider react-scripts test",
+    "build:localhost": "cross-env PUBLIC_URL='.' react-scripts build",
+    "test": "react-scripts test",
     "test:ci": "cross-env CI=true npm test",
     "eject": "react-scripts eject",
     "predeploy": "npm run build",
@@ -64,8 +63,5 @@
   },
   "lint-staged": {
     "./src/**/*.{js,jsx,ts,tsx}": "pretty-quick"
-  },
-  "overrides": {
-    "@babel/core": "^7.26.0"
   }
 }
