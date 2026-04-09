@@ -142,7 +142,7 @@ const MandelbrotCanvas = React.forwardRef<HTMLCanvasElement, MandelbrotCanvasPro
       [colour, devicePixelRatio, onFpsChange, onViewportRendered, viewport],
     );
 
-    useEffect(() => {
+    useLayoutEffect(() => {
       const canvas = localCanvasRef.current;
       if (!canvas) {
         return;
