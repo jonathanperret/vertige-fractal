@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { settingsDefinitionsType } from './common/settings';
 import { MandelbrotCanvas, MandelbrotViewport } from './standalone/mandelbrot';
 
 type OverlaySpec = [[number, number, number], string];
@@ -36,7 +35,7 @@ const phasedProgress = (
   return (t - startFraction) / (endFraction - startFraction);
 };
 
-function App({ settings }: { settings: settingsDefinitionsType }): JSX.Element {
+function App(): JSX.Element {
   const [viewport, setViewport] = useState<MandelbrotViewport>({
     center: [-0.75, 0],
     zoom: 1,
@@ -54,7 +53,7 @@ function App({ settings }: { settings: settingsDefinitionsType }): JSX.Element {
   const activePointerIdRef = useRef<number | null>(null);
   const lastPointerRef = useRef<{ x: number; y: number } | null>(null);
 
-  const dpr = settings.useDPR ? window.devicePixelRatio || 1 : 1;
+  const dpr = 1;
 
   useEffect(() => {
     viewportRef.current = viewport;
@@ -208,8 +207,8 @@ function App({ settings }: { settings: settingsDefinitionsType }): JSX.Element {
       <MandelbrotCanvas
         ref={canvasRef}
         viewport={viewport}
-        maxIterations={settings.maxI}
-        antiAliasing={settings.useAA ? 2 : 1}
+        maxIterations={256}
+        antiAliasing={1}
         showCrosshair={false}
         colour={[0, 153, 255]}
         devicePixelRatio={dpr}

@@ -2,18 +2,13 @@ import { ThemeProvider } from '@material-ui/core';
 import React from 'react';
 import ReactDOM from 'react-dom';
 import App from './App';
-import SettingsProvider, { SettingsContext } from './components/settings/SettingsContext';
 import './index.css';
 import theme from './theme/theme';
 
 ReactDOM.render(
   <React.StrictMode>
     <ThemeProvider theme={theme}>
-      <SettingsProvider>
-        <SettingsContext.Consumer>
-          {({ settings }) => <App settings={settings} />}
-        </SettingsContext.Consumer>
-      </SettingsProvider>
+      <App />
     </ThemeProvider>
   </React.StrictMode>,
   document.getElementById('root'),
