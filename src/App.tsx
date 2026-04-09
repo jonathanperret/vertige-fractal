@@ -457,33 +457,6 @@ function App(): JSX.Element {
     [isOpaqueAt],
   );
 
-  const handleOverlayPointerDown = useCallback(
-    (e: React.PointerEvent) => {
-      const hit = hitTestOverlays(e.clientX, e.clientY);
-      if (hit < 0) return;
-      e.stopPropagation();
-      e.preventDefault();
-      overlayDragRef.current = {
-        pointerId: e.pointerId,
-        index: hit,
-        type: 'move',
-        startX: e.clientX,
-        startY: e.clientY,
-        startPos: [...overlayPositionsRef.current[hit]] as [number, number, number],
-      };
-    },
-    [hitTestOverlays],
-  );
-
-  const handleOverlayPointerMove = useCallback(
-    (e: React.PointerEvent) => {
-      const target = e.currentTarget as HTMLElement;
-      const hit = hitTestOverlays(e.clientX, e.clientY);
-      target.style.cursor = hit >= 0 ? 'move' : '';
-    },
-    [hitTestOverlays],
-  );
-
   const handleScalePointerDown = useCallback((e: React.PointerEvent, index: number) => {
     e.stopPropagation();
     e.preventDefault();
