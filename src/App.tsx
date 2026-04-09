@@ -7,19 +7,42 @@ import {
 
 type OverlaySpec = [[number, number, number], string];
 
-const overlays: OverlaySpec[] = [
-  [[-0.7624408696724466, 0.15111695770871622, 58.14811982749229], '2.png'],
-  [[-0.7790093316154937, 0.14259088021324595, 200], '3.png'],
-  [[-0.7800631994335768, 0.13428712862079534, 3758.1557643680244], '4.png'],
+const defaultOverlaySpecs: OverlaySpec[] = [
+  [[-1.2680107, 0.23614191, 29.7134], '12.png'],
+  [[-1.2262774, 0.22066583, 40.8872], '13.png'],
+  [[-1.219345, 0.26554721, 47.9617], '14.png'],
+  [[-1.1892944, 0.20803179, 152.34], '1.png'],
+  [[-1.1946412, 0.22644784, 89.0857], '2.png'],
+  [[-1.1632692, 0.20965263, 180.0], '3.png'],
+  [[-1.1738303, 0.20105339, 600.0], '4.png'],
+  [[-1.1710264, 0.20102448, 600.0], '5.png'],
+  [[-1.1676312, 0.20086451, 3247.87], '6.png'],
+  [[-1.1667392, 0.20081691, 3346.16], '7.png'],
+  [[-1.1663967, 0.20028344, 2779.82], '8.png'],
+  [[-1.1674198, 0.20013518, 24091.3], '9.png'],
+  [[-1.1674513, 0.20020977, 38708.8], '10.png'],
+  [[-1.1663967, 0.20028344, 2779.82], '11.png'],
+  [[-1.1663967, 0.20028344, 2779.82], '15.png'],
+  [[-1.1663967, 0.20028344, 2779.82], '16.png'],
+  [[-1.1663967, 0.20028344, 2779.82], '17.png'],
+  [[-1.1663967, 0.20028344, 2779.82], '18.png'],
+  [[-1.1663967, 0.20028344, 2779.82], '19.png'],
+  [[-1.1663967, 0.20028344, 2779.82], '20.png'],
 ];
 
-const cameraViews: Array<[number, number, number]> = [
-  [-1.1782685749698265, 0.1922475031674506, 178.7091852129108],
-  [-0.7668512060286207, 0.15139570682153763, 46.87175976351492],
-  [-0.7798865343424441, 0.14161080656031674, 158.38090710690577],
-  [-0.7800631994335768, 0.13428712862079534, 3758.1557643680244],
-];
+const overlayFilenames = defaultOverlaySpecs.map(([, f]) => f);
+const OVERLAY_STORAGE_KEY = 'mandelbrot-overlay-positions';
 
+const VIEWS_STORAGE_KEY = 'mandelbrot-camera-views';
+
+const defaultCameraViews: Array<[number, number, number]> = [
+  [-1.2487993, 0.20859993, 17.989],
+  [-1.2884500944527815, 0.2152325341820895, 5.7917026211095735],
+  [-1.1732692466540553, 0.20765262869232662, 61.78133335964409],
+  [-1.172577731561138, 0.20091177634624477, 379.56118966909094],
+  [-1.1670974, 0.20055126, 1666.67],
+  [-1.1674727, 0.20016897, 13567.2],
+];
 const easeInOutCubic = (t: number): number =>
   t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 
@@ -53,28 +76,79 @@ const phasedProgress = (
 };
 
 function App(): JSX.Element {
+  const [views, setViews] = useState<Array<[number, number, number]>>(() => {
+    try {
+      const saved = localStorage.getItem(VIEWS_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {
+      /* ignore */
+    }
+    return defaultCameraViews.map((v) => [...v] as [number, number, number]);
+  });
+  const [viewsCopyStatus, setViewsCopyStatus] = useState<'idle' | 'copied'>('idle');
+  const viewsRef = useRef(views);
   const [viewport, setViewport] = useState<MandelbrotViewport>({
-    center: [cameraViews[0][0], cameraViews[0][1]],
-    zoom: cameraViews[0][2],
+    center: [views[0][0], views[0][1]],
+    zoom: views[0][2],
     rotation: 0,
   });
   const [fps, setFps] = useState<string>('0.0');
   const [dragging, setDragging] = useState(false);
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'error'>('idle');
   const [viewIndex, setViewIndex] = useState(0);
+  const [overlayPositions, setOverlayPositions] = useState<
+    Array<[number, number, number]>
+  >(() => {
+    try {
+      const saved = localStorage.getItem(OVERLAY_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length === defaultOverlaySpecs.length)
+          return parsed;
+      }
+    } catch {
+      /* ignore */
+    }
+    return defaultOverlaySpecs.map(([pos]) => [...pos] as [number, number, number]);
+  });
+  const [overlayCopyStatus, setOverlayCopyStatus] = useState<'idle' | 'copied'>('idle');
+  const [editMode, setEditMode] = useState(false);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const overlayRefs = useRef<Array<HTMLImageElement | null>>([]);
+  const overlayRefs = useRef<Array<HTMLDivElement | null>>([]);
   const animationFrameRef = useRef<number | null>(null);
   const viewportRef = useRef<MandelbrotViewport>(viewport);
   const activePointerIdRef = useRef<number | null>(null);
   const lastPointerRef = useRef<{ x: number; y: number } | null>(null);
+  const canvasSizeRef = useRef({ width: 0, height: 0 });
+  const overlayPositionsRef = useRef(overlayPositions);
+  const overlayDragRef = useRef<{
+    pointerId: number;
+    index: number;
+    type: 'move' | 'scale';
+    startX: number;
+    startY: number;
+    startPos: [number, number, number];
+  } | null>(null);
 
   const dpr = 1;
 
   useEffect(() => {
     viewportRef.current = viewport;
   }, [viewport]);
+
+  useEffect(() => {
+    viewsRef.current = views;
+    localStorage.setItem(VIEWS_STORAGE_KEY, JSON.stringify(views));
+  }, [views]);
+
+  useEffect(() => {
+    overlayPositionsRef.current = overlayPositions;
+    localStorage.setItem(OVERLAY_STORAGE_KEY, JSON.stringify(overlayPositions));
+  }, [overlayPositions]);
 
   const stopCameraAnimation = useCallback(() => {
     if (animationFrameRef.current !== null) {
@@ -91,7 +165,8 @@ function App(): JSX.Element {
 
   const animateToView = useCallback(
     (nextIndex: number) => {
-      if (nextIndex < 0 || nextIndex >= cameraViews.length) {
+      const currentViews = viewsRef.current;
+      if (nextIndex < 0 || nextIndex >= currentViews.length) {
         return;
       }
 
@@ -99,7 +174,7 @@ function App(): JSX.Element {
       setViewIndex(nextIndex);
 
       const start = viewportRef.current;
-      const [targetX, targetY, targetZoom] = cameraViews[nextIndex];
+      const [targetX, targetY, targetZoom] = currentViews[nextIndex];
       const target: MandelbrotViewport = {
         center: [targetX, targetY],
         zoom: targetZoom,
@@ -164,6 +239,7 @@ function App(): JSX.Element {
       renderedViewport: MandelbrotViewport,
       canvasSize: { width: number; height: number },
     ) => {
+      canvasSizeRef.current = canvasSize;
       if (canvasSize.width <= 0 || canvasSize.height <= 0) {
         return;
       }
@@ -171,17 +247,15 @@ function App(): JSX.Element {
       const theta = renderedViewport.rotation ?? 0;
       const cosT = Math.cos(theta);
       const sinT = Math.sin(theta);
+      const positions = overlayPositionsRef.current;
 
-      overlays.forEach(([[centerX, centerY, fillWindowZoom], filename], index) => {
+      positions.forEach(([centerX, centerY, fillWindowZoom], index) => {
         const overlay = overlayRefs.current[index];
         if (!overlay) {
           return;
         }
 
         if (fillWindowZoom <= 0) {
-          console.error(
-            `Overlay ${filename} has invalid fillWindowZoom: ${fillWindowZoom}`,
-          );
           return;
         }
 
@@ -204,8 +278,73 @@ function App(): JSX.Element {
     [],
   );
 
+  useEffect(() => {
+    const handleMove = (e: PointerEvent) => {
+      const drag = overlayDragRef.current;
+      if (!drag || drag.pointerId !== e.pointerId) return;
+
+      const vp = viewportRef.current;
+      const H = canvasSizeRef.current.height;
+      if (H <= 0) return;
+
+      const dx = e.clientX - drag.startX;
+      const dy = e.clientY - drag.startY;
+
+      if (drag.type === 'move') {
+        const theta = vp.rotation ?? 0;
+        const cosT = Math.cos(theta);
+        const sinT = Math.sin(theta);
+        const s = (vp.zoom * H) / 2;
+        const dcX = (dx * cosT + dy * sinT) / s;
+        const dcY = (dx * sinT - dy * cosT) / s;
+        setOverlayPositions((prev) => {
+          const next = [...prev];
+          next[drag.index] = [
+            drag.startPos[0] + dcX,
+            drag.startPos[1] + dcY,
+            drag.startPos[2],
+          ];
+          return next;
+        });
+      } else {
+        const scaleFactor = Math.pow(2, dx / 150);
+        setOverlayPositions((prev) => {
+          const next = [...prev];
+          next[drag.index] = [
+            drag.startPos[0],
+            drag.startPos[1],
+            Math.max(1, drag.startPos[2] / scaleFactor),
+          ];
+          return next;
+        });
+      }
+    };
+
+    const handleUp = (e: PointerEvent) => {
+      const drag = overlayDragRef.current;
+      if (!drag || drag.pointerId !== e.pointerId) return;
+      overlayDragRef.current = null;
+    };
+
+    window.addEventListener('pointermove', handleMove);
+    window.addEventListener('pointerup', handleUp);
+    return () => {
+      window.removeEventListener('pointermove', handleMove);
+      window.removeEventListener('pointerup', handleUp);
+    };
+  }, []);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    updateOverlayPlacement(viewportRef.current, {
+      width: canvas.clientWidth,
+      height: canvas.clientHeight,
+    });
+  }, [editMode, overlayPositions, updateOverlayPlacement]);
+
   const handleCopyCoordinates = useCallback(async () => {
-    const triplet = `[${viewport.center[0]},${viewport.center[1]},${viewport.zoom}]`;
+    const triplet = `[${viewport.center[0].toPrecision(8)},${viewport.center[1].toPrecision(8)},${viewport.zoom.toPrecision(6)}]`;
 
     try {
       if (!navigator.clipboard) {
@@ -222,6 +361,43 @@ function App(): JSX.Element {
       setCopyStatus('idle');
     }, 1200);
   }, [viewport]);
+
+  const handleCopyOverlays = useCallback(async () => {
+    const lines = overlayPositions.map((pos, i) => {
+      const [x, y, z] = pos;
+      return `  [[${x.toPrecision(8)}, ${y.toPrecision(8)}, ${z.toPrecision(6)}], '${overlayFilenames[i]}'],`;
+    });
+    const text = `const overlays: OverlaySpec[] = [\n${lines.join('\n')}\n];`;
+    try {
+      await navigator.clipboard.writeText(text);
+      setOverlayCopyStatus('copied');
+      setTimeout(() => setOverlayCopyStatus('idle'), 1200);
+    } catch {
+      /* ignore */
+    }
+  }, [overlayPositions]);
+
+  const handleResetOverlays = useCallback(() => {
+    setOverlayPositions(
+      defaultOverlaySpecs.map(([pos]) => [...pos] as [number, number, number]),
+    );
+  }, []);
+
+  const handleOverlayPointerDown = useCallback(
+    (e: React.PointerEvent, index: number, type: 'move' | 'scale') => {
+      e.stopPropagation();
+      e.preventDefault();
+      overlayDragRef.current = {
+        pointerId: e.pointerId,
+        index,
+        type,
+        startX: e.clientX,
+        startY: e.clientY,
+        startPos: [...overlayPositionsRef.current[index]] as [number, number, number],
+      };
+    },
+    [],
+  );
 
   return (
     <div
@@ -322,26 +498,74 @@ function App(): JSX.Element {
           }));
         }}
       />
-      {overlays.map(([, filename], index) => (
-        <img
-          key={`${filename}-${index}`}
-          ref={(node) => {
-            overlayRefs.current[index] = node;
-          }}
-          src={`${process.env.PUBLIC_URL}/inserts/${filename}`}
-          alt={`Overlay ${filename}`}
-          style={{
-            position: 'absolute',
-            left: 0,
-            top: 0,
-            transform: 'translateY(-50%)',
-            width: 0,
-            height: 'auto',
-            pointerEvents: 'none',
-            userSelect: 'none',
-          }}
-        />
-      ))}
+      {overlayFilenames.map((filename, index) =>
+        editMode ? (
+          <div
+            key={`overlay-${index}`}
+            ref={(node) => {
+              overlayRefs.current[index] = node;
+            }}
+            style={{
+              position: 'absolute',
+              left: 0,
+              top: 0,
+              transform: 'translateY(-50%)',
+              width: 0,
+              cursor: 'move',
+            }}
+            onPointerDown={(e) => handleOverlayPointerDown(e, index, 'move')}
+          >
+            <img
+              src={`${process.env.PUBLIC_URL}/inserts/${filename}`}
+              alt={`Overlay ${filename}`}
+              draggable={false}
+              style={{
+                width: '100%',
+                height: 'auto',
+                pointerEvents: 'none',
+                userSelect: 'none',
+                display: 'block',
+              }}
+            />
+            <div
+              style={{
+                position: 'absolute',
+                right: -6,
+                bottom: -6,
+                width: 12,
+                height: 12,
+                background: 'rgba(255,255,255,0.7)',
+                border: '1px solid rgba(0,0,0,0.4)',
+                borderRadius: 2,
+                cursor: 'nwse-resize',
+              }}
+              onPointerDown={(e) => {
+                e.stopPropagation();
+                handleOverlayPointerDown(e, index, 'scale');
+              }}
+            />
+          </div>
+        ) : (
+          <img
+            key={`overlay-${index}`}
+            ref={(node) => {
+              overlayRefs.current[index] = node as unknown as HTMLDivElement;
+            }}
+            src={`${process.env.PUBLIC_URL}/inserts/${filename}`}
+            alt={`Overlay ${filename}`}
+            style={{
+              position: 'absolute',
+              left: 0,
+              top: 0,
+              transform: 'translateY(-50%)',
+              width: 0,
+              height: 'auto',
+              pointerEvents: 'none',
+              userSelect: 'none',
+            }}
+          />
+        ),
+      )}
       <div
         style={{
           position: 'absolute',
@@ -382,6 +606,62 @@ function App(): JSX.Element {
         </button>
         {copyStatus === 'copied' ? <span>copied</span> : null}
         {copyStatus === 'error' ? <span>copy failed</span> : null}
+        <span style={{ margin: '0 4px', opacity: 0.3 }}>|</span>
+        <label
+          style={{
+            fontFamily: 'monospace',
+            fontSize: 11,
+            color: '#d8f1ff',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4,
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={editMode}
+            onChange={(e) => setEditMode(e.target.checked)}
+          />
+          Edit overlays
+        </label>
+        {editMode && (
+          <>
+            <button
+              type="button"
+              onClick={handleCopyOverlays}
+              style={{
+                fontFamily: 'monospace',
+                fontSize: 11,
+                color: '#d8f1ff',
+                background: 'rgba(216, 241, 255, 0.12)',
+                border: '1px solid rgba(216, 241, 255, 0.35)',
+                borderRadius: 5,
+                padding: '2px 8px',
+                cursor: 'pointer',
+              }}
+            >
+              Copy overlays
+            </button>
+            {overlayCopyStatus === 'copied' ? <span>copied</span> : null}
+            <button
+              type="button"
+              onClick={handleResetOverlays}
+              style={{
+                fontFamily: 'monospace',
+                fontSize: 11,
+                color: '#d8f1ff',
+                background: 'rgba(216, 241, 255, 0.12)',
+                border: '1px solid rgba(216, 241, 255, 0.35)',
+                borderRadius: 5,
+                padding: '2px 8px',
+                cursor: 'pointer',
+              }}
+            >
+              Reset overlays
+            </button>
+          </>
+        )}
       </div>
       <div
         style={{
@@ -389,47 +669,254 @@ function App(): JSX.Element {
           right: 12,
           bottom: 12,
           display: 'flex',
-          gap: 8,
+          flexDirection: editMode ? 'column' : 'row',
+          gap: 4,
+          maxHeight: editMode ? '60vh' : undefined,
+          overflowY: editMode ? 'auto' : undefined,
         }}
       >
-        <button
-          type="button"
-          onClick={() => animateToView(viewIndex - 1)}
-          disabled={viewIndex <= 0}
-          style={{
-            width: 34,
-            height: 30,
-            fontFamily: 'monospace',
-            fontSize: 18,
-            color: '#d8f1ff',
-            background: 'rgba(0, 0, 0, 0.45)',
-            border: '1px solid rgba(216, 241, 255, 0.35)',
-            borderRadius: 6,
-            cursor: viewIndex <= 0 ? 'not-allowed' : 'pointer',
-            opacity: viewIndex <= 0 ? 0.5 : 1,
-          }}
-        >
-          {'<'}
-        </button>
-        <button
-          type="button"
-          onClick={() => animateToView(viewIndex + 1)}
-          disabled={viewIndex >= cameraViews.length - 1}
-          style={{
-            width: 34,
-            height: 30,
-            fontFamily: 'monospace',
-            fontSize: 18,
-            color: '#d8f1ff',
-            background: 'rgba(0, 0, 0, 0.45)',
-            border: '1px solid rgba(216, 241, 255, 0.35)',
-            borderRadius: 6,
-            cursor: viewIndex >= cameraViews.length - 1 ? 'not-allowed' : 'pointer',
-            opacity: viewIndex >= cameraViews.length - 1 ? 0.5 : 1,
-          }}
-        >
-          {'>'}
-        </button>
+        {editMode ? (
+          <>
+            {views.map((v, i) => (
+              <div key={i} style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                <button
+                  type="button"
+                  title="Move up"
+                  disabled={i === 0}
+                  onClick={() => {
+                    setViews((prev) => {
+                      const next = [...prev];
+                      [next[i - 1], next[i]] = [next[i], next[i - 1]];
+                      return next;
+                    });
+                    if (viewIndex === i) setViewIndex(i - 1);
+                    else if (viewIndex === i - 1) setViewIndex(i);
+                  }}
+                  style={{
+                    fontFamily: 'monospace',
+                    fontSize: 11,
+                    color: '#d8f1ff',
+                    background: 'rgba(216, 241, 255, 0.12)',
+                    border: '1px solid rgba(216, 241, 255, 0.35)',
+                    borderRadius: 4,
+                    padding: '3px 5px',
+                    cursor: i === 0 ? 'not-allowed' : 'pointer',
+                    opacity: i === 0 ? 0.3 : 1,
+                  }}
+                >
+                  ▲
+                </button>
+                <button
+                  type="button"
+                  title="Move down"
+                  disabled={i === views.length - 1}
+                  onClick={() => {
+                    setViews((prev) => {
+                      const next = [...prev];
+                      [next[i], next[i + 1]] = [next[i + 1], next[i]];
+                      return next;
+                    });
+                    if (viewIndex === i) setViewIndex(i + 1);
+                    else if (viewIndex === i + 1) setViewIndex(i);
+                  }}
+                  style={{
+                    fontFamily: 'monospace',
+                    fontSize: 11,
+                    color: '#d8f1ff',
+                    background: 'rgba(216, 241, 255, 0.12)',
+                    border: '1px solid rgba(216, 241, 255, 0.35)',
+                    borderRadius: 4,
+                    padding: '3px 5px',
+                    cursor: i === views.length - 1 ? 'not-allowed' : 'pointer',
+                    opacity: i === views.length - 1 ? 0.3 : 1,
+                  }}
+                >
+                  ▼
+                </button>
+                <button
+                  type="button"
+                  onClick={() => animateToView(i)}
+                  style={{
+                    flex: 1,
+                    fontFamily: 'monospace',
+                    fontSize: 11,
+                    color: i === viewIndex ? '#000' : '#d8f1ff',
+                    background:
+                      i === viewIndex
+                        ? 'rgba(216, 241, 255, 0.8)'
+                        : 'rgba(0, 0, 0, 0.45)',
+                    border: '1px solid rgba(216, 241, 255, 0.35)',
+                    borderRadius: 4,
+                    padding: '3px 6px',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {i + 1}: {v[0].toFixed(4)}, {v[1].toFixed(4)}, z{v[2].toFixed(1)}
+                </button>
+                <button
+                  type="button"
+                  title="Record current view"
+                  onClick={() => {
+                    setViews((prev) => {
+                      const next = [...prev];
+                      next[i] = [
+                        viewport.center[0],
+                        viewport.center[1],
+                        viewport.zoom,
+                      ];
+                      return next;
+                    });
+                  }}
+                  style={{
+                    fontFamily: 'monospace',
+                    fontSize: 11,
+                    color: '#d8f1ff',
+                    background: 'rgba(216, 241, 255, 0.12)',
+                    border: '1px solid rgba(216, 241, 255, 0.35)',
+                    borderRadius: 4,
+                    padding: '3px 5px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  ●
+                </button>
+                <button
+                  type="button"
+                  title="Delete view"
+                  onClick={() => {
+                    setViews((prev) => {
+                      if (prev.length <= 1) return prev;
+                      const next = prev.filter((_, j) => j !== i);
+                      return next;
+                    });
+                    if (viewIndex >= views.length - 1 && viewIndex > 0) {
+                      setViewIndex(viewIndex - 1);
+                    }
+                  }}
+                  style={{
+                    fontFamily: 'monospace',
+                    fontSize: 11,
+                    color: '#d8f1ff',
+                    background: 'rgba(216, 241, 255, 0.12)',
+                    border: '1px solid rgba(216, 241, 255, 0.35)',
+                    borderRadius: 4,
+                    padding: '3px 5px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+            <div style={{ display: 'flex', gap: 4 }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setViews((prev) => [
+                    ...prev,
+                    [viewport.center[0], viewport.center[1], viewport.zoom],
+                  ]);
+                }}
+                style={{
+                  fontFamily: 'monospace',
+                  fontSize: 11,
+                  color: '#d8f1ff',
+                  background: 'rgba(216, 241, 255, 0.12)',
+                  border: '1px solid rgba(216, 241, 255, 0.35)',
+                  borderRadius: 4,
+                  padding: '3px 6px',
+                  cursor: 'pointer',
+                }}
+              >
+                + Add view
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  const lines = views.map(
+                    ([x, y, z]) =>
+                      `  [${x.toPrecision(8)}, ${y.toPrecision(8)}, ${z.toPrecision(6)}],`,
+                  );
+                  const text = `const cameraViews: Array<[number, number, number]> = [\n${lines.join('\n')}\n];`;
+                  try {
+                    await navigator.clipboard.writeText(text);
+                    setViewsCopyStatus('copied');
+                    setTimeout(() => setViewsCopyStatus('idle'), 1200);
+                  } catch {
+                    /* ignore */
+                  }
+                }}
+                style={{
+                  fontFamily: 'monospace',
+                  fontSize: 11,
+                  color: '#d8f1ff',
+                  background: 'rgba(216, 241, 255, 0.12)',
+                  border: '1px solid rgba(216, 241, 255, 0.35)',
+                  borderRadius: 4,
+                  padding: '3px 6px',
+                  cursor: 'pointer',
+                }}
+              >
+                Copy views
+              </button>
+              {viewsCopyStatus === 'copied' ? (
+                <span
+                  style={{
+                    fontFamily: 'monospace',
+                    fontSize: 11,
+                    color: '#d8f1ff',
+                    alignSelf: 'center',
+                  }}
+                >
+                  copied
+                </span>
+              ) : null}
+            </div>
+          </>
+        ) : (
+          <>
+            <button
+              type="button"
+              onClick={() => animateToView(viewIndex - 1)}
+              disabled={viewIndex <= 0}
+              style={{
+                width: 34,
+                height: 30,
+                fontFamily: 'monospace',
+                fontSize: 18,
+                color: '#d8f1ff',
+                background: 'rgba(0, 0, 0, 0.45)',
+                border: '1px solid rgba(216, 241, 255, 0.35)',
+                borderRadius: 6,
+                cursor: viewIndex <= 0 ? 'not-allowed' : 'pointer',
+                opacity: viewIndex <= 0 ? 0.5 : 1,
+              }}
+            >
+              {'<'}
+            </button>
+            <button
+              type="button"
+              onClick={() => animateToView(viewIndex + 1)}
+              disabled={viewIndex >= views.length - 1}
+              style={{
+                width: 34,
+                height: 30,
+                fontFamily: 'monospace',
+                fontSize: 18,
+                color: '#d8f1ff',
+                background: 'rgba(0, 0, 0, 0.45)',
+                border: '1px solid rgba(216, 241, 255, 0.35)',
+                borderRadius: 6,
+                cursor: viewIndex >= views.length - 1 ? 'not-allowed' : 'pointer',
+                opacity: viewIndex >= views.length - 1 ? 0.5 : 1,
+              }}
+            >
+              {'>'}
+            </button>
+          </>
+        )}
       </div>
     </div>
   );
