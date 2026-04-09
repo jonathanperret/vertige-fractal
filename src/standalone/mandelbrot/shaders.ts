@@ -9,6 +9,7 @@ export interface MandelbrotShaderOptions {
   escapeRadius?: number;
   showCrosshair?: boolean;
   crosshair?: CrosshairShape;
+  paletteSize?: number;
 }
 
 export const defaultCrosshair: CrosshairShape = {
@@ -37,6 +38,7 @@ export function createMandelbrotFragmentShader({
   escapeRadius = 64,
   showCrosshair = false,
   crosshair = defaultCrosshair,
+  paletteSize = 8,
 }: MandelbrotShaderOptions): string {
   return `
 // Adapted from the Mandelbrot Maps shader, itself based on work by inigo quilez.
@@ -62,7 +64,8 @@ uniform vec2 resolution;
 uniform vec2 u_xy;
 uniform float u_zoom;
 uniform float u_theta;
-uniform vec3 u_colour;
+uniform vec3 u_palette[${paletteSize}];
+uniform float u_paletteSpeed;
 
 bool crosshair(float x, float y) {
   float abs_x = abs(2.0 * x - resolution.x);
@@ -111,7 +114,19 @@ void main() {
     vec2 c = u_xy + xy / u_zoom;
 
     float l = mandelbrot(c);
-    col += 0.5 + 0.5 * cos(3.0 + l * 0.15 + u_colour);
+
+    if (l > 0.0) {
+      float t = mod(l * u_paletteSpeed, 1.0) * ${paletteSize - 1}.0;
+      int idx = int(floor(t));
+      float frac = t - floor(t);
+      vec3 c1 = u_palette[0];
+      vec3 c2 = u_palette[0];
+      for (int i = 0; i < ${paletteSize}; i++) {
+        if (i == idx) c1 = u_palette[i];
+        if (i == idx + 1) c2 = u_palette[i];
+      }
+      col += mix(c1, c2, frac);
+    }
 
   #if AA > 1
   }

@@ -1,23 +1,40 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { MandelbrotCanvas, MandelbrotViewport } from './standalone/mandelbrot';
+import {
+  MandelbrotCanvas,
+  MandelbrotPalette,
+  MandelbrotViewport,
+} from './standalone/mandelbrot';
 
 type OverlaySpec = [[number, number, number], string];
 
 const overlays: OverlaySpec[] = [
-  [[-0.7624408696724466,0.15111695770871622,58.14811982749229], '2.png'],
+  [[-0.7624408696724466, 0.15111695770871622, 58.14811982749229], '2.png'],
   [[-0.7790093316154937, 0.14259088021324595, 200], '3.png'],
-  [[-0.7800631994335768,0.13428712862079534,3758.1557643680244], '4.png'],
+  [[-0.7800631994335768, 0.13428712862079534, 3758.1557643680244], '4.png'],
 ];
 
 const cameraViews: Array<[number, number, number]> = [
-  [-0.75, 0, 1],
-  [-0.7668512060286207,0.15139570682153763,46.87175976351492],
+  [-1.1782685749698265, 0.1922475031674506, 178.7091852129108],
+  [-0.7668512060286207, 0.15139570682153763, 46.87175976351492],
   [-0.7798865343424441, 0.14161080656031674, 158.38090710690577],
-  [-0.7800631994335768,0.13428712862079534,3758.1557643680244],
+  [-0.7800631994335768, 0.13428712862079534, 3758.1557643680244],
 ];
 
 const easeInOutCubic = (t: number): number =>
   t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+const palette: MandelbrotPalette = [
+  [180, 150, 190], // muted lavender
+  [220, 160, 170], // soft rose pink
+  [245, 240, 245], // near-white
+  [190, 190, 185], // warm gray
+  [140, 165, 150], // sage green
+  [200, 130, 155], // deeper rose
+  [170, 195, 240], // light blue
+  [100, 90, 105], // dark mauve
+];
+
+const paletteSpeed = 0.02;
 
 const phasedProgress = (
   t: number,
@@ -210,7 +227,8 @@ function App(): JSX.Element {
         maxIterations={256}
         antiAliasing={1}
         showCrosshair={false}
-        colour={[0, 153, 255]}
+        palette={palette}
+        paletteSpeed={paletteSpeed}
         devicePixelRatio={dpr}
         onFpsChange={setFps}
         onViewportRendered={updateOverlayPlacement}

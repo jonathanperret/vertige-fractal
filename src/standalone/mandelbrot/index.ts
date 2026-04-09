@@ -2,6 +2,7 @@ export { default as MandelbrotCanvas } from './MandelbrotCanvas';
 export type {
   MandelbrotCanvasProps,
   MandelbrotColour,
+  MandelbrotPalette,
   MandelbrotPoint,
   MandelbrotViewport,
 } from './MandelbrotCanvas';

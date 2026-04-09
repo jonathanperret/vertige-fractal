@@ -16,6 +16,7 @@ import {
 
 export type MandelbrotPoint = [number, number];
 export type MandelbrotColour = [number, number, number];
+export type MandelbrotPalette = MandelbrotColour[];
 
 export interface MandelbrotViewport {
   center: MandelbrotPoint;
@@ -31,7 +32,8 @@ export interface MandelbrotCanvasProps extends Omit<
   maxIterations?: number;
   antiAliasing?: number;
   escapeRadius?: number;
-  colour?: MandelbrotColour;
+  palette?: MandelbrotPalette;
+  paletteSpeed?: number;
   showCrosshair?: boolean;
   devicePixelRatio?: number;
   onFpsChange?: (fps: string) => void;
@@ -46,11 +48,24 @@ interface ResizeObserverLike {
   observe: (target: Element) => void;
 }
 
-function toShaderColour(colour: MandelbrotColour): [number, number, number] {
-  return [colour[0] / 255, colour[1] / 255, colour[2] / 255];
+function toShaderPalette(palette: MandelbrotPalette): number[] {
+  const flat: number[] = [];
+  for (const [r, g, b] of palette) {
+    flat.push(r / 255, g / 255, b / 255);
+  }
+  return flat;
 }
 
-const defaultColour: MandelbrotColour = [0, 153, 255];
+const defaultPalette: MandelbrotPalette = [
+  [0, 7, 100],
+  [32, 107, 203],
+  [237, 255, 255],
+  [255, 170, 0],
+  [0, 2, 0],
+  [0, 7, 100],
+  [32, 107, 203],
+  [237, 255, 255],
+];
 
 const MandelbrotCanvas = React.forwardRef<HTMLCanvasElement, MandelbrotCanvasProps>(
   (
@@ -59,7 +74,8 @@ const MandelbrotCanvas = React.forwardRef<HTMLCanvasElement, MandelbrotCanvasPro
       maxIterations = 300,
       antiAliasing = 1,
       escapeRadius = 64,
-      colour = defaultColour,
+      palette = defaultPalette,
+      paletteSpeed = 0.05,
       showCrosshair = false,
       devicePixelRatio = window.devicePixelRatio || 1,
       onFpsChange,
@@ -95,6 +111,7 @@ const MandelbrotCanvas = React.forwardRef<HTMLCanvasElement, MandelbrotCanvasPro
       antiAliasing,
       escapeRadius,
       showCrosshair,
+      paletteSize: palette.length,
     });
 
     const renderFrame = useCallback(
@@ -118,7 +135,8 @@ const MandelbrotCanvas = React.forwardRef<HTMLCanvasElement, MandelbrotCanvasPro
           u_xy: viewport.center,
           u_zoom: viewport.zoom,
           u_theta: viewport.rotation ?? 0,
-          u_colour: toShaderColour(colour),
+          u_palette: toShaderPalette(palette),
+          u_paletteSpeed: paletteSpeed,
         });
         twgl.drawBufferInfo(gl, bufferInfo);
 
@@ -141,7 +159,14 @@ const MandelbrotCanvas = React.forwardRef<HTMLCanvasElement, MandelbrotCanvasPro
           }
         }
       },
-      [colour, devicePixelRatio, onFpsChange, onViewportRendered, viewport],
+      [
+        palette,
+        paletteSpeed,
+        devicePixelRatio,
+        onFpsChange,
+        onViewportRendered,
+        viewport,
+      ],
     );
 
     useLayoutEffect(() => {
