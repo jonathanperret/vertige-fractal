@@ -24,10 +24,8 @@ export interface MandelbrotViewport {
   rotation?: number;
 }
 
-export interface MandelbrotCanvasProps extends Omit<
-  CanvasHTMLAttributes<HTMLCanvasElement>,
-  'color'
-> {
+export interface MandelbrotCanvasProps
+  extends Omit<CanvasHTMLAttributes<HTMLCanvasElement>, 'color'> {
   viewport: MandelbrotViewport;
   maxIterations?: number;
   antiAliasing?: number;

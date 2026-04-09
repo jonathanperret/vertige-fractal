@@ -101,7 +101,7 @@ function App(): JSX.Element {
     zoom: views[0][2],
     rotation: 0,
   });
-  const [fps, setFps] = useState<string>('0.0');
+  const [, setFps] = useState<string>('0.0');
   const [dragging, setDragging] = useState(false);
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'error'>('idle');
   const [viewIndex, setViewIndex] = useState(0);
@@ -350,7 +350,9 @@ function App(): JSX.Element {
   }, [editMode, overlayPositions, updateOverlayPlacement]);
 
   const handleCopyCoordinates = useCallback(async () => {
-    const triplet = `[${viewport.center[0].toPrecision(8)},${viewport.center[1].toPrecision(8)},${viewport.zoom.toPrecision(6)}]`;
+    const triplet = `[${viewport.center[0].toPrecision(
+      8,
+    )},${viewport.center[1].toPrecision(8)},${viewport.zoom.toPrecision(6)}]`;
 
     try {
       if (!navigator.clipboard) {
@@ -371,7 +373,9 @@ function App(): JSX.Element {
   const handleCopyOverlays = useCallback(async () => {
     const lines = overlayPositions.map((pos, i) => {
       const [x, y, z] = pos;
-      return `  [[${x.toPrecision(8)}, ${y.toPrecision(8)}, ${z.toPrecision(6)}], '${overlayFilenames[i]}'],`;
+      return `  [[${x.toPrecision(8)}, ${y.toPrecision(8)}, ${z.toPrecision(6)}], '${
+        overlayFilenames[i]
+      }'],`;
     });
     const text = `const overlays: OverlaySpec[] = [\n${lines.join('\n')}\n];`;
     try {
@@ -860,9 +864,13 @@ function App(): JSX.Element {
                 onClick={async () => {
                   const lines = views.map(
                     ([x, y, z]) =>
-                      `  [${x.toPrecision(8)}, ${y.toPrecision(8)}, ${z.toPrecision(6)}],`,
+                      `  [${x.toPrecision(8)}, ${y.toPrecision(8)}, ${z.toPrecision(
+                        6,
+                      )}],`,
                   );
-                  const text = `const cameraViews: Array<[number, number, number]> = [\n${lines.join('\n')}\n];`;
+                  const text = `const cameraViews: Array<[number, number, number]> = [\n${lines.join(
+                    '\n',
+                  )}\n];`;
                   try {
                     await navigator.clipboard.writeText(text);
                     setViewsCopyStatus('copied');
