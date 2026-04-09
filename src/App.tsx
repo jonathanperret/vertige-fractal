@@ -428,28 +428,34 @@ function App(): JSX.Element {
     });
   }, []);
 
-  const isOpaqueAt = useCallback((clientX: number, clientY: number, index: number): boolean => {
-    const overlay = overlayRefs.current[index];
-    if (!overlay) return false;
-    const rect = overlay.getBoundingClientRect();
-    const relX = (clientX - rect.left) / rect.width;
-    const relY = (clientY - rect.top) / rect.height;
-    const url = `${process.env.PUBLIC_URL}/inserts/${overlayFilenames[index]}`;
-    const alpha = overlayAlphaRef.current.get(url);
-    if (alpha && relX >= 0 && relX < 1 && relY >= 0 && relY < 1) {
-      const px = Math.floor(relX * alpha.width);
-      const py = Math.floor(relY * alpha.height);
-      return alpha.data[(py * alpha.width + px) * 4 + 3] >= 10;
-    }
-    return false;
-  }, []);
+  const isOpaqueAt = useCallback(
+    (clientX: number, clientY: number, index: number): boolean => {
+      const overlay = overlayRefs.current[index];
+      if (!overlay) return false;
+      const rect = overlay.getBoundingClientRect();
+      const relX = (clientX - rect.left) / rect.width;
+      const relY = (clientY - rect.top) / rect.height;
+      const url = `${process.env.PUBLIC_URL}/inserts/${overlayFilenames[index]}`;
+      const alpha = overlayAlphaRef.current.get(url);
+      if (alpha && relX >= 0 && relX < 1 && relY >= 0 && relY < 1) {
+        const px = Math.floor(relX * alpha.width);
+        const py = Math.floor(relY * alpha.height);
+        return alpha.data[(py * alpha.width + px) * 4 + 3] >= 10;
+      }
+      return false;
+    },
+    [],
+  );
 
-  const hitTestOverlays = useCallback((clientX: number, clientY: number): number => {
-    for (let i = overlayFilenames.length - 1; i >= 0; i--) {
-      if (isOpaqueAt(clientX, clientY, i)) return i;
-    }
-    return -1;
-  }, [isOpaqueAt]);
+  const hitTestOverlays = useCallback(
+    (clientX: number, clientY: number): number => {
+      for (let i = overlayFilenames.length - 1; i >= 0; i--) {
+        if (isOpaqueAt(clientX, clientY, i)) return i;
+      }
+      return -1;
+    },
+    [isOpaqueAt],
+  );
 
   const handleOverlayPointerDown = useCallback(
     (e: React.PointerEvent) => {
@@ -478,21 +484,18 @@ function App(): JSX.Element {
     [hitTestOverlays],
   );
 
-  const handleScalePointerDown = useCallback(
-    (e: React.PointerEvent, index: number) => {
-      e.stopPropagation();
-      e.preventDefault();
-      overlayDragRef.current = {
-        pointerId: e.pointerId,
-        index,
-        type: 'scale',
-        startX: e.clientX,
-        startY: e.clientY,
-        startPos: [...overlayPositionsRef.current[index]] as [number, number, number],
-      };
-    },
-    [],
-  );
+  const handleScalePointerDown = useCallback((e: React.PointerEvent, index: number) => {
+    e.stopPropagation();
+    e.preventDefault();
+    overlayDragRef.current = {
+      pointerId: e.pointerId,
+      index,
+      type: 'scale',
+      startX: e.clientX,
+      startY: e.clientY,
+      startPos: [...overlayPositionsRef.current[index]] as [number, number, number],
+    };
+  }, []);
 
   return (
     <div
@@ -524,12 +527,41 @@ function App(): JSX.Element {
 
           stopCameraAnimation();
 
+          if (editMode) {
+            const hit = hitTestOverlays(event.clientX, event.clientY);
+            if (hit >= 0) {
+              event.stopPropagation();
+              event.preventDefault();
+              overlayDragRef.current = {
+                pointerId: event.pointerId,
+                index: hit,
+                type: 'move',
+                startX: event.clientX,
+                startY: event.clientY,
+                startPos: [...overlayPositionsRef.current[hit]] as [
+                  number,
+                  number,
+                  number,
+                ],
+              };
+              return;
+            }
+          }
+
           activePointerIdRef.current = event.pointerId;
           lastPointerRef.current = { x: event.clientX, y: event.clientY };
           setDragging(true);
           canvasRef.current?.setPointerCapture(event.pointerId);
         }}
         onPointerMove={(event) => {
+          if (editMode && !activePointerIdRef.current) {
+            const canvas = canvasRef.current;
+            if (canvas) {
+              const hit = hitTestOverlays(event.clientX, event.clientY);
+              canvas.style.cursor = hit >= 0 ? 'move' : dragging ? 'grabbing' : 'grab';
+            }
+          }
+
           if (activePointerIdRef.current !== event.pointerId || !lastPointerRef.current) {
             return;
           }
@@ -594,19 +626,6 @@ function App(): JSX.Element {
           }));
         }}
       />
-      {editMode && (
-        <div
-          style={{
-            position: 'absolute',
-            left: 0,
-            top: 0,
-            width: '100%',
-            height: '100%',
-          }}
-          onPointerDown={handleOverlayPointerDown}
-          onPointerMove={handleOverlayPointerMove}
-        />
-      )}
       {editMode &&
         overlayFilenames.map((filename, index) => (
           <div
