@@ -32,10 +32,7 @@ export interface OverlaySpec {
   imageUrl: string;
 }
 
-export interface MandelbrotCanvasProps extends Omit<
-  CanvasHTMLAttributes<HTMLCanvasElement>,
-  'color'
-> {
+export interface MandelbrotCanvasProps extends Omit<CanvasHTMLAttributes<HTMLCanvasElement>, 'color'> {
   viewport: MandelbrotViewport;
   maxIterations?: number;
   antiAliasing?: number;
