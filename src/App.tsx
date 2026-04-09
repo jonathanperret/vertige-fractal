@@ -134,6 +134,7 @@ function App(): JSX.Element {
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const overlayRefs = useRef<Array<HTMLDivElement | null>>([]);
+  const overlayAlphaRef = useRef<Map<string, { data: Uint8ClampedArray; width: number; height: number }>>(new Map());
   const animationFrameRef = useRef<number | null>(null);
   const viewportRef = useRef<MandelbrotViewport>(viewport);
   const activePointerIdRef = useRef<number | null>(null);
@@ -402,8 +403,46 @@ function App(): JSX.Element {
     );
   }, []);
 
+  useEffect(() => {
+    overlayFilenames.forEach((filename) => {
+      const url = `${process.env.PUBLIC_URL}/inserts/${filename}`;
+      if (overlayAlphaRef.current.has(url)) return;
+      const img = new Image();
+      img.onload = () => {
+        const c = document.createElement('canvas');
+        c.width = img.naturalWidth;
+        c.height = img.naturalHeight;
+        const ctx = c.getContext('2d');
+        if (!ctx) return;
+        ctx.drawImage(img, 0, 0);
+        const imageData = ctx.getImageData(0, 0, c.width, c.height);
+        overlayAlphaRef.current.set(url, { data: imageData.data, width: c.width, height: c.height });
+      };
+      img.src = url;
+    });
+  }, []);
+
+  const isOpaqueAt = useCallback((e: React.PointerEvent, index: number): boolean => {
+    const overlay = overlayRefs.current[index];
+    if (!overlay) return false;
+    const rect = overlay.getBoundingClientRect();
+    const relX = (e.clientX - rect.left) / rect.width;
+    const relY = (e.clientY - rect.top) / rect.height;
+    const url = `${process.env.PUBLIC_URL}/inserts/${overlayFilenames[index]}`;
+    const alpha = overlayAlphaRef.current.get(url);
+    if (alpha && relX >= 0 && relX < 1 && relY >= 0 && relY < 1) {
+      const px = Math.floor(relX * alpha.width);
+      const py = Math.floor(relY * alpha.height);
+      return alpha.data[(py * alpha.width + px) * 4 + 3] >= 10;
+    }
+    return true;
+  }, []);
+
   const handleOverlayPointerDown = useCallback(
     (e: React.PointerEvent, index: number, type: 'move' | 'scale') => {
+      if (type === 'move') {
+        if (!isOpaqueAt(e, index)) return;
+      }
       e.stopPropagation();
       e.preventDefault();
       overlayDragRef.current = {
@@ -415,7 +454,16 @@ function App(): JSX.Element {
         startPos: [...overlayPositionsRef.current[index]] as [number, number, number],
       };
     },
-    [],
+    [isOpaqueAt],
+  );
+
+  const handleOverlayPointerMove = useCallback(
+    (e: React.PointerEvent, index: number) => {
+      const overlay = overlayRefs.current[index];
+      if (!overlay) return;
+      overlay.style.cursor = isOpaqueAt(e, index) ? 'move' : '';
+    },
+    [isOpaqueAt],
   );
 
   return (
@@ -531,9 +579,9 @@ function App(): JSX.Element {
               top: 0,
               transform: 'translateY(-50%)',
               width: 0,
-              cursor: 'move',
             }}
             onPointerDown={(e) => handleOverlayPointerDown(e, index, 'move')}
+            onPointerMove={(e) => handleOverlayPointerMove(e, index)}
           >
             <div
               style={{
