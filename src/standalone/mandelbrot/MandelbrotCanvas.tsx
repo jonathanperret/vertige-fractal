@@ -32,8 +32,10 @@ export interface OverlaySpec {
   imageUrl: string;
 }
 
-export interface MandelbrotCanvasProps
-  extends Omit<CanvasHTMLAttributes<HTMLCanvasElement>, 'color'> {
+export interface MandelbrotCanvasProps extends Omit<
+  CanvasHTMLAttributes<HTMLCanvasElement>,
+  'color'
+> {
   viewport: MandelbrotViewport;
   maxIterations?: number;
   antiAliasing?: number;
@@ -100,9 +102,13 @@ const MandelbrotCanvas = React.forwardRef<HTMLCanvasElement, MandelbrotCanvasPro
     const resizeObserverRef = useRef<ResizeObserverLike | null>(null);
     const overlayProgramRef = useRef<twgl.ProgramInfo | null>(null);
     const overlayBufferRef = useRef<twgl.BufferInfo | null>(null);
-    const overlayTexturesRef = useRef<Map<string, { texture: WebGLTexture; aspectRatio: number } | null>>(new Map());
+    const overlayTexturesRef = useRef<
+      Map<string, { texture: WebGLTexture; aspectRatio: number } | null>
+    >(new Map());
     const overlaysRef = useRef(overlays);
-    const renderFrameRef = useRef<(timestamp?: number) => void>(() => { /* noop */ });
+    const renderFrameRef = useRef<(timestamp?: number) => void>(() => {
+      /* noop */
+    });
     const fpsThenRef = useRef(0);
     const fpsFramesRef = useRef(0);
     const fpsElapsedRef = useRef(0);
@@ -169,7 +175,10 @@ const MandelbrotCanvas = React.forwardRef<HTMLCanvasElement, MandelbrotCanvasPro
           const cosT = Math.cos(theta);
           const sinT = Math.sin(theta);
 
-          for (const { position: [cx, cy, fillWindowZoom], imageUrl } of currentOverlays) {
+          for (const {
+            position: [cx, cy, fillWindowZoom],
+            imageUrl,
+          } of currentOverlays) {
             const texInfo = overlayTexturesRef.current.get(imageUrl);
             if (!texInfo || fillWindowZoom <= 0) continue;
 
@@ -316,6 +325,7 @@ const MandelbrotCanvas = React.forwardRef<HTMLCanvasElement, MandelbrotCanvasPro
 
     useEffect(() => {
       overlaysRef.current = overlays;
+      renderFrameRef.current();
     }, [overlays]);
 
     useEffect(() => {

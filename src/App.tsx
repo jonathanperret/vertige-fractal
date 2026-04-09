@@ -439,7 +439,7 @@ function App(): JSX.Element {
         devicePixelRatio={dpr}
         onFpsChange={setFps}
         onViewportRendered={editMode ? updateOverlayPlacement : undefined}
-        overlays={editMode ? undefined : overlayData}
+        overlays={overlayData}
         style={{ cursor: dragging ? 'grabbing' : 'grab', touchAction: 'none' }}
         onPointerDown={(event) => {
           if (event.button !== 0) {
@@ -535,16 +535,11 @@ function App(): JSX.Element {
             }}
             onPointerDown={(e) => handleOverlayPointerDown(e, index, 'move')}
           >
-            <img
-              src={`${process.env.PUBLIC_URL}/inserts/${filename}`}
-              alt={`Overlay ${filename}`}
-              draggable={false}
+            <div
               style={{
                 width: '100%',
-                height: 'auto',
+                paddingBottom: '100%',
                 pointerEvents: 'none',
-                userSelect: 'none',
-                display: 'block',
               }}
             />
             <div
