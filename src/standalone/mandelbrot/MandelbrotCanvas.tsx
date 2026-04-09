@@ -23,8 +23,10 @@ export interface MandelbrotViewport {
   rotation?: number;
 }
 
-export interface MandelbrotCanvasProps
-  extends Omit<CanvasHTMLAttributes<HTMLCanvasElement>, 'color'> {
+export interface MandelbrotCanvasProps extends Omit<
+  CanvasHTMLAttributes<HTMLCanvasElement>,
+  'color'
+> {
   viewport: MandelbrotViewport;
   maxIterations?: number;
   antiAliasing?: number;
@@ -148,7 +150,7 @@ const MandelbrotCanvas = React.forwardRef<HTMLCanvasElement, MandelbrotCanvasPro
         return;
       }
 
-      const gl = twgl.getWebGLContext(canvas, { antialias: false });
+      const gl = twgl.getContext(canvas, { antialias: false });
       if (!gl) {
         console.error('Unable to create a WebGL context for the Mandelbrot canvas.');
         return;
@@ -162,7 +164,7 @@ const MandelbrotCanvas = React.forwardRef<HTMLCanvasElement, MandelbrotCanvasPro
       };
 
       const handleContextRestored = () => {
-        glRef.current = twgl.getWebGLContext(canvas, { antialias: false });
+        glRef.current = twgl.getContext(canvas, { antialias: false });
       };
 
       canvas.addEventListener('webglcontextlost', handleContextLost, false);
@@ -204,9 +206,11 @@ const MandelbrotCanvas = React.forwardRef<HTMLCanvasElement, MandelbrotCanvasPro
 
       window.addEventListener('resize', handleResize);
 
-      const ResizeObserverCtor = (window as Window & {
-        ResizeObserver?: new (callback: () => void) => ResizeObserverLike;
-      }).ResizeObserver;
+      const ResizeObserverCtor = (
+        window as Window & {
+          ResizeObserver?: new (callback: () => void) => ResizeObserverLike;
+        }
+      ).ResizeObserver;
 
       if (ResizeObserverCtor) {
         resizeObserverRef.current = new ResizeObserverCtor(handleResize);
