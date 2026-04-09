@@ -511,7 +511,7 @@ function App(): JSX.Element {
         ref={canvasRef}
         viewport={viewport}
         maxIterations={256}
-        antiAliasing={1}
+        antiAliasing={2}
         showCrosshair={false}
         palette={palette}
         paletteSpeed={paletteSpeed}
