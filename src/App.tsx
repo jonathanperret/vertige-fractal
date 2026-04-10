@@ -681,25 +681,6 @@ function App(): React.JSX.Element {
           </button>
           {copyStatus === 'copied' ? <span>copied</span> : null}
           {copyStatus === 'error' ? <span>copy failed</span> : null}
-          <span style={{ margin: '0 4px', opacity: 0.3 }}>|</span>
-          <label
-            style={{
-              fontFamily: 'monospace',
-              fontSize: 11,
-              color: '#d8f1ff',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 4,
-            }}
-          >
-            <input
-              type="checkbox"
-              checked={editMode}
-              onChange={(e) => setEditMode(e.target.checked)}
-            />
-            Edit
-          </label>
           <button
             type="button"
             onClick={handleCopyOverlays}
@@ -734,30 +715,29 @@ function App(): React.JSX.Element {
             Reset overlays
           </button>
         </div>
-      ) : (
-        <label
-          style={{
-            position: 'absolute',
-            bottom: 12,
-            left: 12,
-            fontFamily: 'monospace',
-            fontSize: 11,
-            color: 'rgba(216, 241, 255, 0.4)',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 4,
-            userSelect: 'none',
-          }}
-        >
-          <input
-            type="checkbox"
-            checked={editMode}
-            onChange={(e) => setEditMode(e.target.checked)}
-          />
-          Edit
-        </label>
-      )}
+      ) : null}
+      <label
+        style={{
+          position: 'absolute',
+          bottom: 12,
+          left: 12,
+          fontFamily: 'monospace',
+          fontSize: 11,
+          color: editMode ? '#d8f1ff' : 'rgba(216, 241, 255, 0.4)',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 4,
+          userSelect: 'none',
+        }}
+      >
+        <input
+          type="checkbox"
+          checked={editMode}
+          onChange={(e) => setEditMode(e.target.checked)}
+        />
+        Edit
+      </label>
       <div
         style={{
           position: 'absolute',
