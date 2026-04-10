@@ -600,7 +600,7 @@ function App(): React.JSX.Element {
         }}
       />
       {editMode &&
-        overlayFilenames.map((filename, index) => (
+        overlayFilenames.map((_, index) => (
           <div
             key={`overlay-${index}`}
             ref={(node) => {
