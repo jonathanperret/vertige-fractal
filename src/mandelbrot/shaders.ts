@@ -1,21 +1,9 @@
-export interface CrosshairShape {
-  stroke: number;
-  radius: number;
-}
-
 export interface MandelbrotShaderOptions {
   maxIterations?: number;
   antiAliasing?: number;
   escapeRadius?: number;
-  showCrosshair?: boolean;
-  crosshair?: CrosshairShape;
   paletteSize?: number;
 }
-
-export const defaultCrosshair: CrosshairShape = {
-  stroke: 2,
-  radius: 100,
-};
 
 export const fullscreenVertexShader = `
 attribute vec4 position;
@@ -67,8 +55,6 @@ export function createMandelbrotFragmentShader({
   maxIterations = 300,
   antiAliasing = 1,
   escapeRadius = 64,
-  showCrosshair = false,
-  crosshair = defaultCrosshair,
   paletteSize = 8,
 }: MandelbrotShaderOptions): string {
   return `
@@ -80,10 +66,6 @@ export function createMandelbrotFragmentShader({
 #define AA ${antiAliasing}
 #define MAXI ${maxIterations}
 #define B ${escapeRadius.toFixed(1)}
-
-#define show_crosshair ${showCrosshair}
-#define cross_stroke ${crosshair.stroke.toFixed(1)}
-#define cross_radius ${crosshair.radius.toFixed(1)}
 
 #ifdef GL_FRAGMENT_PRECISION_HIGH
   precision highp float;
@@ -97,15 +79,6 @@ uniform float u_zoom;
 uniform float u_theta;
 uniform vec3 u_palette[${paletteSize}];
 uniform float u_paletteSpeed;
-
-bool crosshair(float x, float y) {
-  float abs_x = abs(2.0 * x - resolution.x);
-  float abs_y = abs(2.0 * y - resolution.y);
-
-  return
-    (abs_x <= cross_stroke || abs_y <= cross_stroke) &&
-    (abs_x <= cross_radius && abs_y <= cross_radius);
-}
 
 float mandelbrot(in vec2 c) {
   {
@@ -162,12 +135,6 @@ void main() {
   #if AA > 1
   }
   col /= float(AA * AA);
-  #endif
-
-  #if show_crosshair
-  if (crosshair(gl_FragCoord.x, gl_FragCoord.y)) {
-    col = 1.0 - col;
-  }
   #endif
 
   gl_FragColor = vec4(col, 1.0);

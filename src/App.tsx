@@ -485,7 +485,6 @@ function App(): React.JSX.Element {
         viewport={viewport}
         maxIterations={256}
         antiAliasing={2}
-        showCrosshair={false}
         palette={palette}
         paletteSpeed={paletteSpeed}
         devicePixelRatio={dpr}

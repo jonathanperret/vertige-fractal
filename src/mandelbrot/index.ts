@@ -9,8 +9,7 @@ export type {
 } from './MandelbrotCanvas';
 export {
   createMandelbrotFragmentShader,
-  defaultCrosshair,
   fullscreenVertexArray,
   fullscreenVertexShader,
 } from './shaders';
-export type { CrosshairShape, MandelbrotShaderOptions } from './shaders';
+export type { MandelbrotShaderOptions } from './shaders';

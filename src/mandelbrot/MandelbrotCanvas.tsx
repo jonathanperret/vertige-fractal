@@ -40,7 +40,6 @@ export interface MandelbrotCanvasProps extends Omit<
   escapeRadius?: number;
   palette?: MandelbrotPalette;
   paletteSpeed?: number;
-  showCrosshair?: boolean;
   devicePixelRatio?: number;
   onFpsChange?: (fps: string) => void;
   onViewportRendered?: (
@@ -83,7 +82,6 @@ const MandelbrotCanvas = React.forwardRef<HTMLCanvasElement, MandelbrotCanvasPro
       escapeRadius = 64,
       palette = defaultPalette,
       paletteSpeed = 0.05,
-      showCrosshair = false,
       devicePixelRatio = window.devicePixelRatio || 1,
       onFpsChange,
       onViewportRendered,
@@ -127,7 +125,6 @@ const MandelbrotCanvas = React.forwardRef<HTMLCanvasElement, MandelbrotCanvasPro
       maxIterations,
       antiAliasing,
       escapeRadius,
-      showCrosshair,
       paletteSize: palette.length,
     });
 
