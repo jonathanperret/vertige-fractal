@@ -157,7 +157,6 @@ const MandelbrotCanvas = React.forwardRef<HTMLCanvasElement, MandelbrotCanvasPro
         });
         twgl.drawBufferInfo(gl, bufferInfo);
 
-        // Draw overlays via WebGL
         const currentOverlays = overlaysRef.current;
         const overlayProgram = overlayProgramRef.current;
         const overlayBuffer = overlayBufferRef.current;

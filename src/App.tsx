@@ -3,7 +3,7 @@ import {
   MandelbrotCanvas,
   MandelbrotPalette,
   MandelbrotViewport,
-} from './standalone/mandelbrot';
+} from './mandelbrot';
 
 type OverlaySpec = [[number, number, number], string];
 
