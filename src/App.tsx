@@ -127,7 +127,7 @@ function App(): React.JSX.Element {
     () =>
       overlayPositions.map((pos, i) => ({
         position: pos as [number, number, number],
-        imageUrl: `${process.env.PUBLIC_URL}/inserts/${overlayFilenames[i]}`,
+        imageUrl: `${import.meta.env.BASE_URL}inserts/${overlayFilenames[i]}`,
       })),
     [overlayPositions],
   );
@@ -407,7 +407,7 @@ function App(): React.JSX.Element {
 
   useEffect(() => {
     overlayFilenames.forEach((filename) => {
-      const url = `${process.env.PUBLIC_URL}/inserts/${filename}`;
+      const url = `${import.meta.env.BASE_URL}inserts/${filename}`;
       if (overlayAlphaRef.current.has(url)) return;
       const img = new Image();
       img.onload = () => {
@@ -435,7 +435,7 @@ function App(): React.JSX.Element {
       const rect = overlay.getBoundingClientRect();
       const relX = (clientX - rect.left) / rect.width;
       const relY = (clientY - rect.top) / rect.height;
-      const url = `${process.env.PUBLIC_URL}/inserts/${overlayFilenames[index]}`;
+      const url = `${import.meta.env.BASE_URL}inserts/${overlayFilenames[index]}`;
       const alpha = overlayAlphaRef.current.get(url);
       if (alpha && relX >= 0 && relX < 1 && relY >= 0 && relY < 1) {
         const px = Math.floor(relX * alpha.width);

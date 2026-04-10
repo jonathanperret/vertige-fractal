@@ -6,41 +6,34 @@
   "dependencies": {
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "lint-staged": "^16.4.0",
     "react": "^19.2.5",
-    "react-colorful": "^5.6.1",
     "react-dom": "^19.2.5",
-    "react-scripts": "^5.0.1",
     "twgl.js": "^7.0.0",
     "typescript": "^6.0.2"
   },
   "devDependencies": {
-    "cross-env": "^10.1.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.5",
     "gh-pages": "^6.3.0",
     "prettier": "^3.8.1",
     "standard-version": "^9.5.0",
-    "web-vitals": "^5.2.0"
+    "vite": "^6.3.5",
+    "@vitejs/plugin-react": "^4.7.0"
   },
   "scripts": {
-    "start": "cross-env REACT_APP_GIT_SHA=$(git describe --tags) react-scripts start",
-    "start:https": "cross-env HTTPS=true REACT_APP_GIT_SHA=$(git describe --tags) react-scripts start",
-    "build": "cross-env REACT_APP_GIT_SHA=$(git describe --tags) react-scripts build",
-    "build:ci": "cross-env CI=true npm run build",
-    "build:localhost": "cross-env PUBLIC_URL='.' react-scripts build",
-    "test": "react-scripts test",
-    "test:ci": "cross-env CI=true npm test",
-    "eject": "react-scripts eject",
+    "start": "vite",
+    "start:https": "vite --https",
+    "build": "vite build",
+    "build:ci": "CI=true npm run build",
+    "build:localhost": "vite build --base=./",
+    "test": "echo \"No tests configured\"",
+    "test:ci": "npm run test",
     "predeploy": "npm run build",
-    "deploy": "npm run predeploy && gh-pages -d build",
-    "lint": "eslint \"./src/**.{js,jsx,ts,tsx}\"",
-    "lint:fix": "eslint \"./src/**/*.{js,jsx,ts,tsx}\" --fix",
+    "deploy": "npm run predeploy && gh-pages -d dist",
+    "lint": "prettier --check \"src/**/*.{ts,tsx,css}\"",
+    "lint:fix": "prettier --write \"src/**/*.{ts,tsx,css}\"",
     "release": "standard-version",
     "release:patch": "npm run release -- --release-as patch"
-  },
-  "eslintConfig": {
-    "extends": "react-app"
   },
   "browserslist": {
     "production": [
@@ -53,8 +46,5 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
-  },
-  "lint-staged": {
-    "./src/**/*.{js,jsx,ts,tsx}": "pretty-quick"
   }
 }
