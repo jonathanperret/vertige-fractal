@@ -81,7 +81,7 @@ const phasedProgress = (
   return (t - startFraction) / (endFraction - startFraction);
 };
 
-function App(): JSX.Element {
+function App(): React.JSX.Element {
   const [views, setViews] = useState<Array<[number, number, number]>>(() => {
     try {
       const saved = localStorage.getItem(VIEWS_STORAGE_KEY);

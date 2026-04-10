@@ -1,17 +1,12 @@
-import { ThemeProvider } from '@material-ui/core';
 import React from 'react';
-import ReactDOM from 'react-dom';
+import { createRoot } from 'react-dom/client';
 import App from './App';
 import './index.css';
-import theme from './theme/theme';
 
-ReactDOM.render(
+createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <ThemeProvider theme={theme}>
-      <App />
-    </ThemeProvider>
+    <App />
   </React.StrictMode>,
-  document.getElementById('root'),
 );
 // by the ServiceWorkerWrapper (ServiceWorkerWrapper.tsx)
 
