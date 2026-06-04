@@ -38,6 +38,7 @@ const defaultOverlaySpecs: OverlaySpec[] = [
   [[0.25869171, 0.28848717, 8.42965], '28.png'],
   [[-0.19313856, 0.39271389, 8.42965], '29.png'],
   [[-0.47481939, 0.052643849, 8.42965], '30.png'],
+  [[-0.47481939, 0.052643849, 8.42965], '31.png'],
 ];
 const overlayFilenames = defaultOverlaySpecs.map(([, f]) => f);
 const OVERLAY_STORAGE_KEY = 'mandelbrot-overlay-positions';
